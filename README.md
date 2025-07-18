@@ -75,8 +75,6 @@ npm test
 
 ---
 
----
-
 ## 🙏 Acknowledgements
 - [Next.js](https://nextjs.org/)
 - [NewsAPI.org](https://newsapi.org/)
