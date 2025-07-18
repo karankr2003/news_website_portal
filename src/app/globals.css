@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background-color: #eee;
+  --font-color: #333;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background-color: #222;
+    --font-color: #eee;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--background-color);
+  color: var(--font-color);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Theme variables (from DarkMode.css) */
+:root {
+  --font-color: #333;
+  --background-color: #eee;
+  --link-color: cornflowerblue;
+}
+
+[data-theme="dark"] {
+  --font-color: #eee;
+  --background-color: #222;
+  --link-color: lightblue;
+}
+
+a {
+  color: var(--link-color);
+}
+
+/* Custom Dark Mode Toggle Element */
+.toggle-theme-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.toggle-theme-wrapper span {
+  font-size: 28px;
+}
+
+.toggle-theme {
+  position: relative;
+  display: inline-block;
+  height: 34px;
+  width: 60px;
+}
+
+.toggle-theme input {
+  display: none;
+}
+
+.slider {
+  background-color: #e0e0e0;
+  position: absolute;
+  cursor: pointer;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+}
+
+.slider:before {
+  background-color: #f5f5f5;
+  bottom: 4px;
+  content: "";
+  height: 26px;
+  left: 4px;
+  position: absolute;
+  transition: 0.4s;
+  width: 26px;
+  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.08);
+}
+
+input:checked + .slider {
+  background-color: #222;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+}
+
+input:checked + .slider:before {
+  background-color: #444;
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }

@@ -1,102 +1,102 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState, useRef, useCallback, use } from "react";
+import { fetchTopHeadlines, fetchByCategory, searchNews } from "../utils/newsApi";
+import ArticleCard from "../components/ArticleCard";
+import Header from "../components/Header";
 
-export default function Home() {
+const PAGE_SIZE = 12;
+
+export default function Home({ searchParams }) {
+  const params = use(searchParams);
+  const { category = 'top-headlines', q = '', language = 'en' } = params || {};
+  const selectedCategory = category;
+  const query = q;
+  const selectedLanguage = language;
+
+  const [articles, setArticles] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  const observer = useRef();
+  const lastArticleRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new window.IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
+
+  // Reset articles when filters change
+  useEffect(() => {
+    setArticles([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, [selectedCategory, query, selectedLanguage]);
+
+  // Fetch articles
+  useEffect(() => {
+    let ignore = false;
+    const fetchArticles = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let data;
+        if (query) {
+          data = await searchNews(query, page, PAGE_SIZE, selectedLanguage);
+        } else if (selectedCategory === "top-headlines") {
+          data = await fetchTopHeadlines(page, PAGE_SIZE, selectedLanguage);
+        } else {
+          data = await fetchByCategory(selectedCategory, page, PAGE_SIZE, selectedLanguage);
+        }
+        if (!ignore) {
+          setArticles(prev => page === 1 ? (data.articles || []) : [...prev, ...(data.articles || [])]);
+          setHasMore((data.articles || []).length === PAGE_SIZE);
+        }
+      } catch (e) {
+        if (!ignore) setError("Failed to fetch news articles.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    fetchArticles();
+    return () => { ignore = true; };
+  }, [selectedCategory, query, selectedLanguage, page]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen font-sans flex flex-col" style={{ background: "var(--background-color)", color: "var(--font-color)" }}>
+      {/* Header */}
+      <Header selectedCategory={selectedCategory} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Main Content */}
+      <main className="flex-1 w-full max-w-6xl mx-auto p-4 flex flex-col gap-0">
+        {/* Section Title */}
+        <h2 className="text-2xl font-bold text-blue-700 m-0">{selectedCategory === "top-headlines" ? "Top Headlines" : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1) + " News"}</h2>
+        {/* Error/Empty State */}
+        <div className="w-full flex justify-center items-center min-h-[60px]">
+          {error && <span className="text-red-500">{error}</span>}
         </div>
+        {/* News List */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {!error && articles.length === 0 && !loading && (
+            <div className="col-span-full text-center text-gray-400">No news articles found.</div>
+          )}
+          {articles.map((article, i) => {
+            if (i === articles.length - 1) {
+              return <div ref={lastArticleRef} key={i}><ArticleCard article={article} index={i} /></div>;
+            }
+            return <ArticleCard key={i} article={article} index={i} />;
+          })}
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      {/* Footer */}
+      <footer className="w-full text-center text-xs text-gray-400 py-4 border-t border-gray-100 mt-8">
+        &copy; {new Date().getFullYear()} News Portal. Powered by Next.js & NewsAPI.org.
       </footer>
     </div>
   );
