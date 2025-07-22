@@ -9,7 +9,7 @@ A modern, responsive news portal built with Next.js, React, and TailwindCSS. Fet
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/karankr2003/news_website_portal.git
-cd news-website-portal/news-website-portal
+cd news_website_portal
 ```
 
 ### 2. Install Dependencies
